@@ -18,7 +18,7 @@ Send earthquake-related notifications to Discord and Twitter.
 
 - Process the published content and send it to Discord / Twitter
 
-### NHKによる地震情報公開時
+### When earthquake information is released by NHK
 
 - Process the published content and send it to Discord / Twitter
 
