@@ -7,10 +7,7 @@ import time
 import schedule as schedule
 from PIL import Image
 
-import jma
-import kmoni
-import lib
-import nhk
+from src import jma, kmoni, lib, nhk
 
 
 def kmoni_watcher():
