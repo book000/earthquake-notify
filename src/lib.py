@@ -4,7 +4,7 @@ import src
 import os
 import tweepy
 
-module_path = src.__path__
+module_path = src.__path__[0]
 
 
 def send_to_discord(token, channelId, message, embed=None, files=None):
