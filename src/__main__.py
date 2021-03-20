@@ -34,7 +34,7 @@ def kmoni_watcher():
     ))
 
     # レポートIDと震度、最終判定で新規判定。震度が変わったら通知
-    check_id = data["data"]["report_id"] + "_" + data["calcintensity"] + "_" + data["data"]["is_final"].toString()
+    check_id = data["data"]["report_id"] + "_" + data["data"]["calcintensity"] + "_" + data["data"]["is_final"].toString()
 
     if data["data"]["calcintensity"] != "不明" and int(data["data"]["calcintensity"][0]) < 4:  # 震度4未満
         return
