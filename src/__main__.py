@@ -17,6 +17,7 @@ def kmoni_watcher():
 
     is_discord_enable = lib.get_settings(config, "discord", "early", "enable")
     is_twitter_enable = lib.get_settings(config, "twitter", "early", "enable")
+    print("kmoni_watcher(): ", is_discord_enable, is_twitter_enable)
     if not is_discord_enable and not is_twitter_enable:
         return
 
@@ -163,6 +164,7 @@ def jma_watcher():
 
     is_discord_enable = lib.get_settings(config, "discord", "jma", "enable")
     is_twitter_enable = lib.get_settings(config, "twitter", "jma", "enable")
+    print("jma_watcher(): ", is_discord_enable, is_twitter_enable)
     if not is_discord_enable and not is_twitter_enable:
         return
 
@@ -269,6 +271,7 @@ def nhk_watcher():
 
     is_discord_enable = lib.get_settings(config, "discord", "nhk", "enable")
     is_twitter_enable = lib.get_settings(config, "twitter", "nhk", "enable")
+    print("nhk_watcher(): ", is_discord_enable, is_twitter_enable)
     if not is_discord_enable and not is_twitter_enable:
         return
 
