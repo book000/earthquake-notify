@@ -35,15 +35,19 @@ def kmoni_watcher():
 
     # レポートIDと震度、最終判定で新規判定。震度が変わったら通知
     check_id = data["data"]["report_id"] + "_" + data["data"]["calcintensity"] + "_" + str(data["data"]["is_final"])
+    print("check_id:", check_id)
 
     if data["data"]["calcintensity"] != "不明" and int(data["data"]["calcintensity"][0]) < 4:  # 震度4未満
         return
+    print("DEBUG: intensity >= 4")
 
     if data["data"]["calcintensity"] == "不明" and float(data["data"]["magunitude"]) < 5:  # 震度不明の場合マグニチュード5以上
         return
+    print("DEBUG: OR mag >= 5")
 
     if lib.is_checked("kmoni", check_id):
         return
+    print("Not checked")
 
     checktime = data["time"]
     img_output = io.BytesIO()
@@ -55,12 +59,14 @@ def kmoni_watcher():
             surface_img = kmoni.get_realtime_surface_jma_img(checktime)
         if under_img is None:
             under_img = kmoni.get_realtime_under_jma_img(checktime)
+    print("Got image")
 
     img = Image.new("RGBA", (surface_img.size[0] + under_img.size[0], surface_img.size[1]), (255, 255, 255, 0))
     img.paste(surface_img, (0, 0))
     img.paste(under_img, (surface_img.size[0] + 1, 0))
 
     img.save(img_output, format='png')
+    print("Generated image")
 
     files = {
         "file": ("output.png", img_output.getvalue())
@@ -123,17 +129,21 @@ def kmoni_watcher():
     }
 
     if not init:
+        print("Not init")
         token = lib.get_settings(config, "discord", "early", "token")
         channel = lib.get_settings(config, "discord", "early", "channel")
         webhook_url = lib.get_settings(config, "discord", "early", "webhook_url")
 
         if is_discord_enable:
             if token is not None and channel is not None:
+                print("Sending discord(channel)")
                 lib.send_to_discord(token, channel, "", embed, files)
             elif webhook_url is not None:
+                print("Sending discord(webhook)")
                 lib.send_to_discord_webhook(webhook_url, "", embed, files)
 
         if is_twitter_enable:
+            print("Sending twitter")
             consumer_key = lib.get_settings(config, "twitter", "early", "consumer_key")
             consumer_secret = lib.get_settings(config, "twitter", "early", "consumer_secret")
             access_token = lib.get_settings(config, "twitter", "early", "access_token")
@@ -154,7 +164,9 @@ def kmoni_watcher():
                 img_output
             )
 
+    print("Add checked")
     lib.add_checked("kmoni", check_id)
+    print("Added checked")
 
 
 def jma_watcher():
