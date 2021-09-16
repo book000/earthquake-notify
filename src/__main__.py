@@ -211,7 +211,7 @@ def jma_watcher():
 
         json_name = item["json"]
         details = jma.getQuakeDetails(json_name)
-        _datetime = datetime.datetime.fromisoformat(details["Control"]["DateTime"].replace("Z", "+00:00"))
+        _datetime = datetime.datetime.fromisoformat(details["Control"]["DateTime"].replace("Z", "+09:00"))
         publish = details["Control"]["PublishingOffice"]
 
         headline = details["Head"]["Headline"]["Text"]
