@@ -180,17 +180,17 @@ def jma_watcher():
     if not is_discord_enable and not is_twitter_enable:
         return
 
-    message_template = "地震情報（震源・震度情報）\n" \
+    message_template = "地震情報\n" \
                        "{DATETIME} {PUBLISH}発表\n" \
                        "\n" \
                        "{HEADLINE}\n" \
-                       "震源地は、{HYPOCENTER}で、震源の深さは約{DEPTH}、地震の規模（マグニチュード）は{MAGNITUDE}と推定されます。\n" \
+                       "震源地は、{HYPOCENTER}で、震源の深さは約{DEPTH}km、地震の規模は{MAGNITUDE}と推定されます。\n" \
                        "\n" \
                        "{FORECAST_COMMENT}" \
                        "\n" \
-                       "この地震により観測された最大震度は震度{MaxInt}です。\n" \
+                       "観測された最大震度は{MaxInt}です。\n" \
                        "\n" \
-                       "震度{MaxInt}	{MaxIntLocations}"
+                       "{MaxInt}	{MaxIntLocations}"
 
     items = jma.getQuakeList()
     for item in items:
@@ -208,6 +208,8 @@ def jma_watcher():
             continue
 
         lib.add_checked("jma", eid)
+        if init:
+            continue
 
         json_name = item["json"]
         details = jma.getQuakeDetails(json_name)
