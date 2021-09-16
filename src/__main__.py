@@ -111,7 +111,7 @@ def kmoni_watcher():
             },
             {
                 "name": "最終報判定フラグ",
-                "value": data["data"]["is_final"].toString(),
+                "value": str(data["data"]["is_final"]),
                 "inline": False
             },
             {
@@ -195,21 +195,23 @@ def jma_watcher():
     items = jma.getQuakeList()
     for item in items:
         eid = item["eid"]
+        print(eid)
         message = message_template
 
+        if item["en_ttl"] != "Earthquake and Seismic Intensity Information":
+            continue  # 震源・震度情報ではない
+
         if int(item["maxi"][0]) < 4:  # 震度4未満
-            return
+            continue
 
         if lib.is_checked("jma", eid):
-            return
+            continue
 
         lib.add_checked("jma", eid)
-        if init:
-            return
 
         json_name = item["json"]
         details = jma.getQuakeDetails(json_name)
-        _datetime = datetime.date.fromisoformat(details["Control"]["DateTime"])
+        _datetime = datetime.datetime.fromisoformat(details["Control"]["DateTime"].replace("Z", "+00:00"))
         publish = details["Control"]["PublishingOffice"]
 
         headline = details["Head"]["Headline"]["Text"]
@@ -220,7 +222,10 @@ def jma_watcher():
         magnitude = details["Body"]["Earthquake"]["Magnitude"]
         maxInt = details["Head"]["Headline"]["Information"][0]["Item"][0]["Kind"]["Name"]
         maxIntLocations = details["Head"]["Headline"]["Information"][0]["Item"][0]["Areas"]["Area"]
-        maxIntLocations = list(map(lambda x: x["Name"], maxIntLocations))
+        if isinstance(maxIntLocations, list):
+            maxIntLocations = list(map(lambda x: x["Name"], maxIntLocations))
+        else:
+            maxIntLocations = [maxIntLocations["Name"]]
 
         forecastComment = details["Body"]["Comments"]["ForecastComment"]["Text"]
 
