@@ -3,8 +3,8 @@ import io
 import json
 import re
 import time
+from concurrent.futures import ProcessPoolExecutor
 
-import schedule as schedule
 from PIL import Image
 
 from src import jma, kmoni, lib, nhk
@@ -22,6 +22,9 @@ def kmoni_watcher():
         return
 
     data = kmoni.get_kyosin_data()
+    if data is None:
+        print("ERROR: kmoni.get_kyosin_data is None")
+        return
     if "alertflg" not in data["data"]:
         return  # 新規データなし
 
@@ -193,6 +196,9 @@ def jma_watcher():
                        "{MaxInt}	{MaxIntLocations}"
 
     items = jma.getQuakeList()
+    if items is None:
+        print("ERROR: jma.getQuakeList is None")
+        return
     for item in items:
         eid = item["eid"]
         print(eid)
@@ -279,7 +285,7 @@ def jma_watcher():
                 consumer_secret,
                 access_token,
                 access_token_secret,
-                "【気象庁地震情報】" + message
+                "【気象庁地震情報】" + (message if len(message) <= 160 else message[:160] + "...")
             )
 
 
@@ -295,6 +301,9 @@ def nhk_watcher():
         return
 
     items = nhk.getJishinReport()
+    if items is None:
+        print("ERROR: nhk.getJishinReport")
+        return
     for item in items:
         jid = item["jid"]
         date_time = item["datetime"]
@@ -379,6 +388,7 @@ def nhk_watcher():
 
 
 if __name__ == "__main__":
+    """
     schedule.every(2).seconds.do(kmoni_watcher)  # 強震モニタは2秒毎チェック
     schedule.every(5).minutes.do(jma_watcher)  # 気象庁は5分毎チェック
     schedule.every(5).minutes.do(nhk_watcher)  # NHKは5分毎チェック
@@ -386,3 +396,15 @@ if __name__ == "__main__":
     while True:
         schedule.run_pending()
         time.sleep(1)
+    """
+    with ProcessPoolExecutor() as pool:
+        while True:
+            now = int(time.time())
+            if now % 2 == 0:
+                # 強震モニタは2秒毎チェック
+                pool.submit(kmoni_watcher)
+            if now % (60 * 5) == 0:
+                # 気象庁・NHKは5分毎チェック
+                pool.submit(jma_watcher)
+                pool.submit(nhk_watcher)
+            time.sleep(1)
