@@ -6,7 +6,7 @@ import re
 import datetime
 
 
-def getJishinReport():
+def get_jishin_report():
     response = requests.get("https://www3.nhk.or.jp/sokuho/jishin/data/JishinReport.xml")
     if response.status_code != 200:
         return None
@@ -52,7 +52,7 @@ def getJishinReport():
     return result
 
 
-def getJishinReportDetails(url):
+def get_jishin_report_details(url):
     response = requests.get(url)
     if response.status_code != 200:
         return None

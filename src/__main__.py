@@ -1,6 +1,7 @@
 import datetime
 import io
 import json
+import os
 import re
 import time
 from concurrent.futures import ProcessPoolExecutor
@@ -9,10 +10,12 @@ from PIL import Image
 
 from src import jma, kmoni, lib, nhk
 
+CONFIG_PATH = os.environ.setdefault("CONFIG_PATH", "config.json")
+
 
 def kmoni_watcher():
     init = lib.is_init("kmoni")
-    with open("config.json") as f:
+    with open(CONFIG_PATH) as f:
         config = json.load(f)
 
     is_discord_enable = lib.get_settings(config, "discord", "early", "enable")
@@ -174,7 +177,7 @@ def kmoni_watcher():
 
 def jma_watcher():
     init = lib.is_init("jma")
-    with open("config.json") as f:
+    with open(CONFIG_PATH) as f:
         config = json.load(f)
 
     is_discord_enable = lib.get_settings(config, "discord", "jma", "enable")
@@ -195,13 +198,12 @@ def jma_watcher():
                        "\n" \
                        "{MaxInt}	{MaxIntLocations}"
 
-    items = jma.getQuakeList()
+    items = jma.get_quake_list()
     if items is None:
         print("ERROR: jma.getQuakeList is None")
         return
     for item in items:
         eid = item["eid"]
-        print(eid)
         message = message_template
 
         if item["en_ttl"] != "Earthquake and Seismic Intensity Information":
@@ -218,7 +220,7 @@ def jma_watcher():
             continue
 
         json_name = item["json"]
-        details = jma.getQuakeDetails(json_name)
+        details = jma.get_quake_details(json_name)
         _datetime = datetime.datetime.fromisoformat(details["Control"]["DateTime"].replace("Z", "+09:00"))
         publish = details["Control"]["PublishingOffice"]
 
@@ -228,14 +230,14 @@ def jma_watcher():
         coords = re.search(r"\+([0-9.]+)\+([0-9.]+)-([0-9]+)/", coords).groups()
         depth = int(int(coords[2]) / 1000)
         magnitude = details["Body"]["Earthquake"]["Magnitude"]
-        maxInt = details["Head"]["Headline"]["Information"][0]["Item"][0]["Kind"]["Name"]
-        maxIntLocations = details["Head"]["Headline"]["Information"][0]["Item"][0]["Areas"]["Area"]
-        if isinstance(maxIntLocations, list):
-            maxIntLocations = list(map(lambda x: x["Name"], maxIntLocations))
+        max_int = details["Head"]["Headline"]["Information"][0]["Item"][0]["Kind"]["Name"]
+        max_int_locations = details["Head"]["Headline"]["Information"][0]["Item"][0]["Areas"]["Area"]
+        if isinstance(max_int_locations, list):
+            max_int_locations = list(map(lambda x: x["Name"], max_int_locations))
         else:
-            maxIntLocations = [maxIntLocations["Name"]]
+            max_int_locations = [max_int_locations["Name"]]
 
-        forecastComment = details["Body"]["Comments"]["ForecastComment"]["Text"]
+        forecast_comment = details["Body"]["Comments"]["ForecastComment"]["Text"]
 
         message = message.format(
             DATETIME=_datetime.strftime("%Y/%m/%d %H:%M:%S"),
@@ -244,9 +246,9 @@ def jma_watcher():
             HYPOCENTER=hypocenter,
             DEPTH=depth,
             MAGNITUDE=magnitude,
-            FORECAST_COMMENT=forecastComment,
-            MaxInt=maxInt,
-            MaxIntLocations=" ".join(maxIntLocations)
+            FORECAST_COMMENT=forecast_comment,
+            MaxInt=max_int,
+            MaxIntLocations=" ".join(max_int_locations)
         )
         print(message)
 
@@ -291,7 +293,7 @@ def jma_watcher():
 
 def nhk_watcher():
     init = lib.is_init("nhk")
-    with open("config.json") as f:
+    with open(CONFIG_PATH) as f:
         config = json.load(f)
 
     is_discord_enable = lib.get_settings(config, "discord", "nhk", "enable")
@@ -300,9 +302,9 @@ def nhk_watcher():
     if not is_discord_enable and not is_twitter_enable:
         return
 
-    items = nhk.getJishinReport()
+    items = nhk.get_jishin_report()
     if items is None:
-        print("ERROR: nhk.getJishinReport")
+        print("ERROR: nhk.get_jishin_report")
         return
     for item in items:
         jid = item["jid"]
@@ -311,16 +313,18 @@ def nhk_watcher():
         url = item["url"]
 
         if int(item["shindo"][0]) < 4:  # 震度4未満
-            return
+            continue
 
         if lib.is_checked("nhk", jid):
-            return
+            continue
 
         lib.add_checked("nhk", jid)
         if init:
-            return
+            continue
 
-        details = nhk.getJishinReportDetails(url)
+        details = nhk.get_jishin_report_details(url)
+        if details is None:
+            continue
 
         embed = {
             "title": "NHK 地震情報",
@@ -351,7 +355,7 @@ def nhk_watcher():
                 }
             ],
             "image": {
-                "url": "https://www3.nhk.or.jp/sokuho/jishin/{}".format(details["image"]["detail"])
+                "url": details["earthquake"]["image"]["detail"]
             }
         }
 
@@ -388,22 +392,13 @@ def nhk_watcher():
 
 
 if __name__ == "__main__":
-    """
-    schedule.every(2).seconds.do(kmoni_watcher)  # 強震モニタは2秒毎チェック
-    schedule.every(5).minutes.do(jma_watcher)  # 気象庁は5分毎チェック
-    schedule.every(5).minutes.do(nhk_watcher)  # NHKは5分毎チェック
-
-    while True:
-        schedule.run_pending()
-        time.sleep(1)
-    """
     with ProcessPoolExecutor() as pool:
         while True:
             now = int(time.time())
             if now % 2 == 0:
                 # 強震モニタは2秒毎チェック
                 pool.submit(kmoni_watcher)
-            if now % (60 * 5) == 0:
+            if now % (60 * 1) == 0:
                 # 気象庁・NHKは5分毎チェック
                 pool.submit(jma_watcher)
                 pool.submit(nhk_watcher)

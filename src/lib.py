@@ -4,10 +4,13 @@ import src
 import os
 import tweepy
 
-module_path = src.__path__[0]
+CHECKED_DATA_PATH = os.environ.setdefault("CHECKED_DATA_PATH", "checked")
+if not os.path.exists(CHECKED_DATA_PATH):
+    os.makedirs(CHECKED_DATA_PATH)
 
 
-def send_to_discord(token, channelId, message, embed=None, files=None):
+def send_to_discord(token, channel_id, message, embed=None, files=None):
+    print("send_to_discord")
     if files is None:
         files = {}
     headers = {
@@ -21,7 +24,7 @@ def send_to_discord(token, channelId, message, embed=None, files=None):
         })
     }
     response = requests.post(
-        "https://discord.com/api/channels/{channelId}/messages".format(channelId=channelId), headers=headers,
+        "https://discord.com/api/channels/{channelId}/messages".format(channelId=channel_id), headers=headers,
         data=params, files=files)
     print(response.status_code)
     print(response.json())
@@ -80,7 +83,7 @@ def get_settings(config, service, notify_type, setting_name):
 
 
 def is_checked(name, data_id):
-    checked_path = os.path.join(module_path, name + ".json")
+    checked_path = os.path.join(CHECKED_DATA_PATH, name + ".json")
     if not os.path.exists(checked_path):
         return False
     with open(checked_path, "r") as f:
@@ -90,7 +93,7 @@ def is_checked(name, data_id):
 
 
 def add_checked(name, data_id):
-    checked_path = os.path.join(module_path, name + ".json")
+    checked_path = os.path.join(CHECKED_DATA_PATH, name + ".json")
     checked = []
     if os.path.exists(checked_path):
         with open(checked_path, "r") as f:
@@ -103,5 +106,5 @@ def add_checked(name, data_id):
 
 
 def is_init(name):
-    checked_path = os.path.join(module_path, name + ".json")
+    checked_path = os.path.join(CHECKED_DATA_PATH, name + ".json")
     return not os.path.exists(checked_path)

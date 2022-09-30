@@ -59,22 +59,7 @@ def get_realtime_surface_jma_img(checktime):
     if shindo_response.status_code == 200:
         img = img_alpha_paste(img, Image.open(io.BytesIO(shindo_response.content)).convert("RGBA"))
 
-    # P/S波表示図
-    wave_img_url = "{base_url}/PSWaveImg/eew/{ymd}/{time}.eew.gif".format(
-        base_url=base_url,
-        ymd=checktime.strftime("%Y%m%d"),
-        time=checktime.strftime("%Y%m%d%H%M%S")
-    )
-
-    wave_response = requests.get(wave_img_url)
-    if wave_response.status_code == 200:
-        img = img_alpha_paste(img, Image.open(io.BytesIO(wave_response.content)).convert("RGBA"))
-
-    jma_scale_img = Image.open("img/nied_jma_s_w_scale.gif").convert("RGBA")
-    img = img_alpha_paste(img, jma_scale_img, (305, 99))
-
-    # img.save("test.png", quality=95)
-    return img
+    return get_image(img, base_url, checktime)
 
 
 def get_realtime_under_jma_img(checktime):
@@ -100,6 +85,10 @@ def get_realtime_under_jma_img(checktime):
 
     img = img_alpha_paste(img, Image.open(io.BytesIO(jma_b_response.content)).convert("RGBA"))
 
+    return get_image(img, base_url, checktime)
+
+
+def get_image(img, base_url, checktime):
     # P/S波表示図
     wave_img_url = "{base_url}/PSWaveImg/eew/{ymd}/{time}.eew.gif".format(
         base_url=base_url,
